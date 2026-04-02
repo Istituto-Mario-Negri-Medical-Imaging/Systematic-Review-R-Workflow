@@ -11,7 +11,7 @@ authors:
 repository-code: "https://github.com/Istituto-Mario-Negri-Medical-Imaging/Systematic-Review-R-Workflow"
 institution: "Istituto Mario Negri – Medical Imaging"
 year: 2026
-abstract: "GitHub repository containing the R workflow, essential input files, and database used for bibliographic import, screening, and downstream analyses in the systematic review 'Mimicking basement membranes in Organ-on-Chip models: a systematic review across physiological barriers'. Available upon reasonable request."
+abstract: "GitHub repository containing the R workflow, essential input files, and database used for bibliographic import, screening, and downstream analyses in the systematic review 'Mimicking basement membranes in Organ-on-Chip models: a systematic review across physiological barriers'."
 keywords:
   - "systematic review"
   - "organ-on-chip"
@@ -30,4 +30,3 @@ preferred-citation:
       given-names: "Marta"
   institution: "Istituto Mario Negri – Medical Imaging"
   year: 2026
-  notes: "Private GitHub repository. Available upon reasonable request."
