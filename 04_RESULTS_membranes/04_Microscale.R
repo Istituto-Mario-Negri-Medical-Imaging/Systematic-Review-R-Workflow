@@ -1,0 +1,196 @@
+# 03: MicroScale Distribution Across Organs ####
+
+# Clean and separate multiple MicroScales
+micro_long <- Membranes_All %>%
+  filter(!is.na(MicroScale), MicroScale != "") %>%
+  separate_rows(MicroScale, sep = ";") %>%
+  mutate(MicroScale = str_trim(MicroScale))
+
+# Count distribution per organ
+micro_distribution <- micro_long %>%
+  group_by(Organ_membrane, MicroScale) %>%
+  summarise(unique_Articles = n_distinct(ID_Article), .groups = "drop") %>%
+  arrange(Organ_membrane, desc(unique_Articles))
+
+# Merge totals and calculate % per organ
+micro_distribution <- micro_distribution %>%
+  left_join(articles_per_organ, by = "Organ_membrane") %>%
+  mutate(Percentage_within_organ = round((unique_Articles / Total_Unique_Articles) * 100, 2))
+
+# Add Overall column (ID_Article + Organ_membrane pairs)
+
+# Total number of unique (ID_Article, Organ_membrane) pairs
+total_unique_pairs_overall <- Membranes_All %>%
+  distinct(ID_Article, Organ_membrane) %>%
+  nrow()
+
+# Count unique pairs per MicroScale
+overall_distribution <- micro_long %>%
+  distinct(ID_Article, Organ_membrane, MicroScale) %>%
+  group_by(MicroScale) %>%
+  summarise(Overall_Unique_Articles = n(), .groups = "drop") %>%
+  mutate(Percentage_Overall = round((Overall_Unique_Articles / total_unique_pairs_overall) * 100, 2))
+
+# Merge into main table
+micro_distribution <- micro_distribution %>%
+  left_join(overall_distribution, by = "MicroScale")
+
+# Create wide-format count table with Overall
+micro_wide_counts <- micro_distribution %>%
+  select(Organ_membrane, MicroScale, unique_Articles, Overall_Unique_Articles) %>%
+  pivot_wider(names_from = Organ_membrane, values_from = unique_Articles, values_fill = 0) %>%
+  mutate(Overall = Overall_Unique_Articles) %>%
+  select(-Overall_Unique_Articles) %>%
+  arrange(desc(Overall)) %>%
+  select(MicroScale, all_of(order))
+
+# Create wide-format percentage table with Overall
+
+micro_wide_percent <- micro_distribution %>%
+  select(Organ_membrane, MicroScale, Percentage_within_organ, Percentage_Overall) %>%
+  pivot_wider(names_from = Organ_membrane, values_from = Percentage_within_organ, values_fill = 0) %>%
+  mutate(Overall = Percentage_Overall) %>%
+  select(-Percentage_Overall) %>%
+  arrange(desc(Overall)) %>%
+  select(MicroScale, all_of(order))
+
+# Export to Excel ####
+write_xlsx(
+  list(
+    Wide_Counts = micro_wide_counts,
+    Wide_Percentages = micro_wide_percent
+  ),
+  "03_MicroScale_By_Organ.xlsx"
+)
+
+# Sistema tabelle per grafico ####
+# CLEAN & RESHAPE PERCENT TABLE (MicroScale)
+micro_long_percent <- micro_wide_percent %>%
+  mutate(across(all_of(organi),
+                ~ suppressWarnings(as.numeric(str_replace(.x, ",", "."))))) %>%  # robust to comma decimals
+  pivot_longer(
+    cols = all_of(organi),
+    names_to = "Organ_membrane",
+    values_to = "Percent"
+  )
+
+# CLEAN & RESHAPE COUNTS TABLE (MicroScale)
+micro_long_counts <- micro_wide_counts %>%
+  pivot_longer(
+    cols = all_of(organi),
+    names_to = "Organ_membrane",
+    values_to = "Count"
+  )
+
+# MERGE % AND COUNTS
+micro_data <- micro_long_percent %>%
+  left_join(micro_long_counts,
+            by = c("MicroScale", "Organ_membrane")) %>%
+  mutate(
+    Organ_membrane = factor(Organ_membrane, levels = organi),
+    MicroScale = factor(MicroScale)
+  )
+
+micro_data <- micro_data %>%
+  mutate(MicroScale = recode(MicroScale, "Crypt‑villus pattern" = "Crypt‑villus\npattern"),
+         MicroScale = recode(MicroScale, "Micropillar lattice" = "Micropillar\nlattice"),
+         MicroScale = recode(MicroScale, "Microporous wall" = "Microporous\nwall"))
+
+# (Optional) derive a dynamic y-limit if you prefer auto-scaling
+ymax <- max(micro_data$Percent, na.rm = TRUE)
+ybreak_max <- ceiling(ymax * 1.15 / 10) * 10
+
+ordine_micro <- c("Porous", "Fibrous", "Vascularized", "Microporous\nwall", "Hollow tubule", "Side-to-side", "Crypt‑villus\npattern", "Micropillar\nlattice", "Mix")
+
+# Grafico: GROUPED BAR PLOT (% values, counts as labels) ####
+ggplot(micro_data,
+       aes(x = factor(MicroScale, levels = ordine_micro),
+           y = Percent,
+           fill = Organ_membrane)) +
+  
+  geom_bar(stat = "identity",
+           position = position_dodge(width = 0.9),
+           color = "black") +
+  
+  # Label absolute counts above bars
+  geom_text(aes(label = Count),
+            position = position_dodge(width = 0.9),
+            vjust = -0.3,
+            size = 3.5) +
+  
+  scale_fill_manual(values = colori_organi) +
+  
+  # Y axis: percent formatting
+  scale_y_continuous(
+    # If you want fixed limits like before, keep the next line and comment the dynamic one
+    limits = c(0, 90),
+    # Alternatively, use dynamic scaling:
+    # limits = c(0, max(10, ybreak_max)),
+    breaks = seq(0, max(micro_data$Percent, na.rm = TRUE) * 1.15, by = 10),
+    labels = function(x) paste0(x, "%")
+  ) +
+  
+  labs(
+    title = "MicroScale usage across organs",
+    x = NULL,
+    y = NULL,
+    fill = "Organ"
+  ) +
+  
+  theme_minimal(base_size = 12) +
+  theme(
+    axis.text.x = element_text(angle = 0,
+                               hjust = 0.5,
+                               size = 12,
+                               color = "black"),
+    axis.text.y = element_text(size = 12, color = "black"),
+    plot.title = element_text(size = 12,
+                              hjust = 0.5,
+                              face = "bold")
+  )
+
+#Salva il grafico ####
+ggsave("03_MicroScale_organs.png", width = 12, height = 6, dpi = 300, bg = "white")
+ggsave("03_MicroScale_organs.svg", width = 12, height = 6, bg = "white")
+
+
+# Tabella MicroScale ####
+## Funzioni per creare la tabella MicroScale ####
+make_microscale_tbl <- function(mem_df, denom_n) {
+  mem_df %>%
+    filter(!is.na(MicroScale), MicroScale != "") %>%
+    group_by(MicroScale) %>%
+    summarise(
+      count = n(),
+      ID_Articles = paste(unique(ID_Article), collapse = "; "),
+      .groups = "drop"
+    ) %>%
+    mutate(percent = (count / denom_n) * 100) %>%
+    arrange(desc(count), MicroScale)
+}
+
+for (nm in names(membrane_list)) {
+  mem_df <- membrane_list[[nm]]
+  denom_n <- nrow(mem_df)  # numero di membrane
+  
+  microscale_tbl <- make_microscale_tbl(mem_df, denom_n)
+  assign(paste0("Mem_microscale_", nm), microscale_tbl, envir = .GlobalEnv)
+}
+
+# (Opzionale) lista nomi creati per verifica rapida
+created_tables <- paste0("Mem_microscale_", names(membrane_list))
+created_tables
+
+
+## Export as Excel file ####
+write_xlsx(
+  list(
+    Gut = Mem_microscale_Gut,
+    Kidney = Mem_microscale_Kidney,
+    Lung = Mem_microscale_Lung,
+    Brain = Mem_microscale_Brain,
+    Placenta = Mem_microscale_Placenta,
+    All_Organs = Mem_microscale_All
+  ),
+  "03_MicroScale.xlsx"
+)

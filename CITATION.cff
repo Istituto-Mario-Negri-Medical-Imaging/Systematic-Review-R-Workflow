@@ -1,0 +1,33 @@
+cff-version: 1.2.0
+message: "If you use this repository, please cite it as below."
+title: "Systematic Review R Workflow"
+type: software
+license: "All rights reserved"
+authors:
+  - family-names: "Cabrini"
+    given-names: "Giulia"
+  - family-names: "Ripamonti"
+    given-names: "Marta"
+repository-code: "https://github.com/Istituto-Mario-Negri-Medical-Imaging/Systematic-Review-R-Workflow"
+institution: "Istituto Mario Negri – Medical Imaging"
+year: 2026
+abstract: "GitHub repository containing the R workflow, essential input files, and database used for bibliographic import, screening, and downstream analyses in the systematic review 'Mimicking basement membranes in Organ-on-Chip models: a systematic review across physiological barriers'. Available upon reasonable request."
+keywords:
+  - "systematic review"
+  - "organ-on-chip"
+  - "basement membrane"
+  - "R"
+  - "workflow"
+  - "GitHub"
+  
+preferred-citation:
+  type: software
+  title: "Systematic Review R Workflow"
+  authors:
+    - family-names: "Cabrini"
+      given-names: "Giulia"
+    - family-names: "Ripamonti"
+      given-names: "Marta"
+  institution: "Istituto Mario Negri – Medical Imaging"
+  year: 2026
+  notes: "Private GitHub repository. Available upon reasonable request."
