@@ -38,9 +38,8 @@ format_authors <- function(authors_raw) {
 }
 
 # IMPORT DATI ####
-pubmed_df <- convert2df("datasets_20250721/pubmed-Lab-On-A-C-set.nbib", dbsource = "pubmed", format = "pubmed")
-scopus_files <- list.files("datasets_20250721", pattern = "scopus_.*\\.bib$", full.names = TRUE)
-scopus_df <- convert2df(scopus_files, dbsource = "scopus", format = "bibtex")
+pubmed_df <- convert2df("datasets_20260927_from2014/pubmed-Lab-On-A-C-set.nbib", dbsource = "pubmed", format = "pubmed")
+scopus_df <- convert2df("datasets_20260927_from2014/scopus.bib", dbsource = "scopus", format = "bibtex")
 
 save_table_to_excel(prepare_bib_table(pubmed_df), "Pubmed")
 save_table_to_excel(prepare_bib_table(scopus_df), "Scopus")
